@@ -1,4 +1,5 @@
 
+from .base import *
 
 from pathlib import Path
 
@@ -17,6 +18,7 @@ BASE_APPS = [
 ]
 
 LOCAL_APPS = [
+    "inicio"
 
 ]
 
