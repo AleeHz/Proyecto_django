@@ -29,3 +29,9 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+
+
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'usuario_dashboard'
+LOGOUT_REDIRECT_URL = 'login'
