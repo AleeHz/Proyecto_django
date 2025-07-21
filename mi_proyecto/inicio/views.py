@@ -36,4 +36,7 @@ def admin_dashboard(request):
 @login_required
 def usuario_dashboard(request):
     return render(request, 'inicio/usuario_dashboard.html')
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4c872381eb5f2ff4499f79352ecfad2e8ad62839

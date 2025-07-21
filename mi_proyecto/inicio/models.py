@@ -1,5 +1,6 @@
 from django.db import models
 
+<<<<<<< HEAD
 
 from django.contrib.auth.models import User
 
@@ -18,3 +19,6 @@ class Post(models.Model):
 
     def __str__(self):
         return self.titulo
+=======
+# Create your models here.
+>>>>>>> 4c872381eb5f2ff4499f79352ecfad2e8ad62839
