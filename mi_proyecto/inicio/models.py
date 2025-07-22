@@ -1,7 +1,5 @@
 from django.db import models
 
-<<<<<<< HEAD
-
 from django.contrib.auth.models import User
 
 class Categoria(models.Model):
@@ -19,6 +17,15 @@ class Post(models.Model):
 
     def __str__(self):
         return self.titulo
-=======
+
+
+class Comentario(models.Model):
+    post = models.ForeignKey(Post, related_name='comentarios', on_delete=models.CASCADE)
+    autor = models.CharField(max_length=100)
+    contenido = models.TextField()
+    texto = models.TextField() 
+    fecha = models.DateTimeField(auto_now_add=True)
+
+def __str__(self):
+        return f"{self.autor.username} - {self.texto[:20]}"
 # Create your models here.
->>>>>>> 4c872381eb5f2ff4499f79352ecfad2e8ad62839

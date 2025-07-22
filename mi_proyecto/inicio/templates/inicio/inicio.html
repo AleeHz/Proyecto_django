@@ -1,0 +1,37 @@
+
+{% extends 'inicio/base_usuario.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Últimos Posts</h1>
+
+{% for post in posts %}
+    <div style="border: 1px solid gray; padding: 10px; margin-bottom: 15px;">
+    <h3>{{ post.titulo }}</h3>
+    <p>{{ post.contenido }}</p>
+    <small>Publicado por <strong>{{ post.autor.username }}</strong> el {{ post.fecha_creacion|date:"d/m/Y H:i" }}</small>
+
+    <h4>Comentarios:</h4>
+    {% for comentario in post.comentario_set.all %}
+    <p><strong>{{ comentario.autor.username }}:</strong> {{ comentario.texto }}</p>
+    {% empty %}
+    <p>No hay comentarios.</p>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+    <form method="post">
+    {% csrf_token %}
+    {{ form.texto }}
+    <input type="hidden" name="post_id" value="{{ post.id }}">
+    <button type="submit">Agregar Comentario</button>
+    </form>
+    {% endif %}
+</div>
+{% endfor %}
+
+<a href="{% url 'perfil' %}">Ir a mi perfil</a>
+{% endblock %}
+
+{% if user.is_authenticated %}
+    <a href="{% url 'perfil' %}">Mi perfil</a>
+{% endif %}

@@ -1,0 +1,12 @@
+
+
+{% extends 'inicio/base_admin.html' %}
+
+{% block content %}
+    <h2>[ADMIN] Crear nuevo post</h2>
+    <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-danger">Publicar</button>
+    </form>
+{% endblock %}

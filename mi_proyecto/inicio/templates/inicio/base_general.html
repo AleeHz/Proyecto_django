@@ -1,0 +1,10 @@
+
+
+{# templates/base_general.html #}
+
+
+{% if request.user.is_superuser %}
+    {% extends "inicio/base_admin.html" %}
+{% else %}
+    {% extends "inicio/base_usuario.html" %}
+{% endif %}

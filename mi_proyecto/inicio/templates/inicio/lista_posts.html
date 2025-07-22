@@ -1,0 +1,12 @@
+
+
+{% extends "inicio/base_admin.html" %}
+
+{% block content %}
+    <h2>Publicaciones existentes</h2>
+    <ul>
+    {% for post in posts %}
+    <li><strong>{{ post.titulo }}</strong> - {{ post.autor.username }}</li>
+    {% endfor %}
+    </ul>
+{% endblock %}

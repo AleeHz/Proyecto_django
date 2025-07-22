@@ -1,0 +1,24 @@
+
+
+{# templates/inicio/detalle_post.html #}
+{% extends "base_general.html" %}
+
+{% block content %}
+<h2>{{ post.titulo }}</h2>
+<p>{{ post.contenido }}</p>
+<p><strong>Autor:</strong> {{ post.autor }}</p>
+
+<h3>Comentarios:</h3>
+    {% if comentarios %}
+    <ul>
+    {% for comentario in comentarios %}
+        <li>
+        <strong>{{ comentario.autor }}</strong>: {{ comentario.contenido }}
+        <br><small>{{ comentario.fecha }}</small>
+        </li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <p>No hay comentarios aún.</p>
+    {% endif %}
+{% endblock %}
