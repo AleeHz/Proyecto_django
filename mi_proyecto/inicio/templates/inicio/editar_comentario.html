@@ -1,0 +1,17 @@
+
+{% extends 'inicio/base_usuario.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4"> 
+    <h2>Editar Comentario</h2> 
+    <form method="post"> {% csrf_token %} 
+        <div class="mb-3"> 
+            <label for="texto" class="form-label">Texto del comentario</label> 
+            <textarea name="texto" id="texto" class="form-control" rows="4">
+                {{ comentario.texto }}</textarea> 
+        </div> <button type="submit" class="btn btn-primary">Guardar Cambios</button> 
+        <a href="{% url 'inicio' %}" class="btn btn-secondary">Cancelar</a> </form> 
+</div> 
+{% endblock %}

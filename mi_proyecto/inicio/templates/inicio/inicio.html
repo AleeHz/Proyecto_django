@@ -1,37 +1,108 @@
-
 {% extends 'inicio/base_usuario.html' %}
 {% load static %}
 
 {% block content %}
 <h1>Últimos Posts</h1>
 
+<div style="margin-bottom: 20px;">
+    {% if user.is_authenticated %}
+        <a href="{% url 'perfil' %}">Mi perfil</a> |
+        <a href="{% url 'logout' %}">Cerrar sesión</a>
+    {% else %}
+        <a href="{% url 'login' %}">Iniciar sesión</a> |
+        <a href="{% url 'register' %}">Registrarse</a>
+    {% endif %}
+</div>
+
 {% for post in posts %}
-    <div style="border: 1px solid gray; padding: 10px; margin-bottom: 15px;">
+<div style="border: 1px solid gray; padding: 10px; margin-bottom: 15px;">
     <h3>{{ post.titulo }}</h3>
+
+    <div style="margin-bottom: 5px;">
+        {% if user == post.autor %}
+            <a href="{% url 'editar_post' post.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
+        {% endif %}
+        {% if user == post.autor or user.is_staff %}
+            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
+        {% endif %}
+    </div>
+
     <p>{{ post.contenido }}</p>
     <small>Publicado por <strong>{{ post.autor.username }}</strong> el {{ post.fecha_creacion|date:"d/m/Y H:i" }}</small>
 
     <h4>Comentarios:</h4>
-    {% for comentario in post.comentario_set.all %}
-    <p><strong>{{ comentario.autor.username }}:</strong> {{ comentario.texto }}</p>
-    {% empty %}
-    <p>No hay comentarios.</p>
+{% if post.comentarios.all %}
+    {% for comentario in post.comentarios.all %}
+        <div style="margin-left: 10px;">
+            <strong>{{ comentario.autor }}:</strong> {{ comentario.texto }}
+            <div style="margin-top: 4px;">
+                {% if user == comentario.autor %}
+                    <a href="{% url 'editar_comentario' comentario.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
+                {% endif %}
+                {% if user == post.autor or user.is_staff %}
+                    <a href="{% url 'eliminar_comentario' comentario.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
+                {% endif %}
+            </div>
+        </div>
     {% endfor %}
+{% else %}
+    <p>No hay comentarios.</p>
+{% endif %}   <!-- Cerramos correctamente el bloque de comentarios -->
+
+{% if user.is_authenticated %}
+    <span 
+        class="like-button" 
+        data-post-id="{{ post.id }}" 
+        data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}"
+        style="cursor:pointer; color: {% if user in post.likes.all %}red{% else %}gray{% endif %};"
+    >
+        {% if user in post.likes.all %}❤️{% else %}🤍{% endif %}
+        <span class="like-count">{{ post.likes.count }}</span>
+    </span>
+{% endif %}
+
+
+
 
     {% if user.is_authenticated %}
-    <form method="post">
-    {% csrf_token %}
-    {{ form.texto }}
-    <input type="hidden" name="post_id" value="{{ post.id }}">
-    <button type="submit">Agregar Comentario</button>
-    </form>
+        <form method="post" action="{% url 'agregar_comentario' post.id %}">
+            {% csrf_token %}
+            <textarea name="texto" placeholder="Escribí un comentario..." rows="3" cols="50"></textarea><br>
+            <button type="submit">Agregar Comentario</button>
+        </form>
+    {% else %}
+        <p><em>Inicia sesión para comentar.</em></p>
     {% endif %}
 </div>
 {% endfor %}
+<script>
+document.querySelectorAll('.like-button').forEach(button => {
+    button.addEventListener('click', function() {
+        const postId = this.dataset.postId;
+        const likeCountSpan = this.querySelector('.like-count');
+        const liked = this.dataset.liked === "true";
+        const csrfToken = '{{ csrf_token }}';
 
-<a href="{% url 'perfil' %}">Ir a mi perfil</a>
+        fetch(`/toggle_like/${postId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            likeCountSpan.textContent = data.likes_count;
+            this.dataset.liked = data.liked ? "true" : "false";
+            this.style.color = data.liked ? 'red' : 'gray';
+            this.innerHTML = (data.liked ? "❤️" : "♡") + ' <span class="like-count">' + data.likes_count + '</span>';
+        });
+    });
+});
+</script>
+
+
+
+
 {% endblock %}
-
-{% if user.is_authenticated %}
-    <a href="{% url 'perfil' %}">Mi perfil</a>
-{% endif %}

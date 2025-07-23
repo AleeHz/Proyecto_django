@@ -1,15 +1,20 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+
 
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm
-
+from django.contrib.auth.forms import AuthenticationForm,UserCreationForm
 
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Categoria, Comentario
 from .forms import PostForm , ComentarioForm
+
+from django.contrib.admin.views.decorators import staff_member_required
+ 
+from django.views.decorators.http import require_POST
+
 
 
 def inicio(request):
@@ -102,3 +107,88 @@ def detalle_post(request, post_id):
         'post': post,
         'comentarios': comentarios
     })
+
+
+@login_required
+def agregar_comentario(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.method == 'POST':
+        texto = request.POST.get('texto')
+        if texto:
+            Comentario.objects.create(post=post, autor=request.user, texto=texto)
+    
+    return redirect('inicio')
+
+@staff_member_required
+def eliminar_comentario(request, comentario_id):
+    comentario = get_object_or_404(Comentario, id=comentario_id)
+    if request.user == comentario.autor or request.user.is_staff:
+        comentario.delete()
+    return redirect('inicio')
+
+@staff_member_required
+def eliminar_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user == post.autor or request.user.is_staff:
+        post.delete()
+    return redirect('inicio')
+
+from django.http import HttpResponseForbidden
+
+@login_required
+def editar_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user != post.autor:
+        return HttpResponseForbidden("No tenés permiso para editar este post.")
+
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('detalle_post', post_id=post.id)
+    else:
+        form = PostForm(instance=post)
+
+    return render(request, 'inicio/editar_post.html', {'form': form})
+
+@login_required
+def editar_comentario(request, comentario_id):
+    comentario = get_object_or_404(Comentario, id=comentario_id)
+    if request.user != comentario.autor:
+        return HttpResponseForbidden("No tenés permiso para editar este comentario.")
+
+    if request.method == 'POST':
+        comentario.texto = request.POST.get('texto')
+        comentario.save()
+        return redirect('inicio')
+    return render(request, 'inicio/editar_comentario.html', {'comentario': comentario})
+
+
+def registro_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            usuario = form.save()
+            login(request, usuario)
+            return redirect('login') #podria cambiar "login" por "inicio" si quiero
+    else:
+        form = UserCreationForm()
+    return render(request, 'inicio/registro.html', {'form': form})
+
+
+@login_required
+def toggle_like(request, post_id):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        post = Post.objects.get(id=post_id)
+        user = request.user
+        if user in post.likes.all():
+            post.likes.remove(user)
+            liked = False
+        else:
+            post.likes.add(user)
+            liked = True
+        return JsonResponse({'liked': liked, 'likes_count': post.likes.count()})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
