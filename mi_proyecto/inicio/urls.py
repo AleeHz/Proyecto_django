@@ -31,6 +31,6 @@ urlpatterns = [
     path('editar_post/<int:post_id>/', views.editar_post, name='editar_post'),
     path('editar_comentario/<int:comentario_id>/', views.editar_comentario, name='editar_comentario'),
 
-    path('like/<int:post_id>/', views.toggle_like, name='toggle_like'),
-    path('toggle_like/<int:post_id>/', views.toggle_like, name='toggle_like'),
+    path("toggle_like/", views.toggle_like_unificado, name="toggle_like_unificado"),
+
     ]

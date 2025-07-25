@@ -35,3 +35,7 @@ DATABASES = {
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'usuario_dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
+USE_TZ = True

@@ -1,12 +1,17 @@
 {% extends 'inicio/base_usuario.html' %}
 {% load static %}
 
+{% load tz %}
+
 {% block content %}
+
 <h1>Últimos Posts</h1>
+
 
 <div style="margin-bottom: 20px;">
     {% if user.is_authenticated %}
         <a href="{% url 'perfil' %}">Mi perfil</a> |
+        <a href="{% url 'crear_post' %}" class="btn btn-success">📝 Crear nuevo post</a>
         <a href="{% url 'logout' %}">Cerrar sesión</a>
     {% else %}
         <a href="{% url 'login' %}">Iniciar sesión</a> |
@@ -28,18 +33,44 @@
     </div>
 
     <p>{{ post.contenido }}</p>
-    <small>Publicado por <strong>{{ post.autor.username }}</strong> el {{ post.fecha_creacion|date:"d/m/Y H:i" }}</small>
+    
+    {% if user.is_authenticated %}
+    <button class="like-button-unificado" data-id="{{ post.id }}" data-tipo="post" data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}"style="background:none; border:none; padding:0; cursor:pointer;">
+        <span class="icono-like">{% if user in post.likes.all %}❤️{% else %}♡{% endif %}</span>
+        <span class="like-count">{{ post.likes.count }}</span>
+    </button>
 
-    <h4>Comentarios:</h4>
+    
+</span>
+
+{% endif %}
+
+
+    <small>Publicado por <strong>{{ post.autor.username }}</strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
+    </small>
+
+<h4>Comentarios:</h4>
+
 {% if post.comentarios.all %}
     {% for comentario in post.comentarios.all %}
-        <div style="margin-left: 10px;">
-            <strong>{{ comentario.autor }}:</strong> {{ comentario.texto }}
+        <div style="margin-left: 10px; margin-bottom: 8px;">
+            <strong>{{ comentario.autor.username }}:</strong> {{ comentario.texto }}
+
+            {% if user.is_authenticated %}
+                <div style="margin-top: 4px;">
+                    <button class="like-button-unificado" data-id="{{ comentario.id }}" data-tipo="comentario" data-liked="{% if user in comentario.likes.all %}true{% else %}false{% endif %}" style="background:none; border:none; padding:0; cursor:pointer;">
+                        <span class="icono-like">{% if user in comentario.likes.all %}❤️{% else %}♡{% endif %}</span>
+                        <span class="like-count">{{ comentario.likes.count }}</span>
+                    </button>
+
+                </div>
+            {% endif %}
+
             <div style="margin-top: 4px;">
                 {% if user == comentario.autor %}
                     <a href="{% url 'editar_comentario' comentario.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
                 {% endif %}
-                {% if user == post.autor or user.is_staff %}
+                {% if user == comentario.autor or user == post.autor or user.is_staff %}
                     <a href="{% url 'eliminar_comentario' comentario.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
                 {% endif %}
             </div>
@@ -47,62 +78,68 @@
     {% endfor %}
 {% else %}
     <p>No hay comentarios.</p>
-{% endif %}   <!-- Cerramos correctamente el bloque de comentarios -->
-
-{% if user.is_authenticated %}
-    <span 
-        class="like-button" 
-        data-post-id="{{ post.id }}" 
-        data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}"
-        style="cursor:pointer; color: {% if user in post.likes.all %}red{% else %}gray{% endif %};"
-    >
-        {% if user in post.likes.all %}❤️{% else %}🤍{% endif %}
-        <span class="like-count">{{ post.likes.count }}</span>
-    </span>
 {% endif %}
 
 
+{% if user.is_authenticated %}
+    <form method="post" action="{% url 'agregar_comentario' post.id %}">
+        {% csrf_token %}
+        <textarea name="texto" placeholder="Escribí un comentario..." rows="3" cols="50"></textarea><br>
+        <button type="submit">Agregar Comentario</button>
+    </form>
+{% else %}
+    <p><em>Inicia sesión para comentar.</em></p>
+{% endif %}
 
 
-    {% if user.is_authenticated %}
-        <form method="post" action="{% url 'agregar_comentario' post.id %}">
-            {% csrf_token %}
-            <textarea name="texto" placeholder="Escribí un comentario..." rows="3" cols="50"></textarea><br>
-            <button type="submit">Agregar Comentario</button>
-        </form>
-    {% else %}
-        <p><em>Inicia sesión para comentar.</em></p>
-    {% endif %}
-</div>
-{% endfor %}
 <script>
-document.querySelectorAll('.like-button').forEach(button => {
-    button.addEventListener('click', function() {
-        const postId = this.dataset.postId;
-        const likeCountSpan = this.querySelector('.like-count');
-        const liked = this.dataset.liked === "true";
-        const csrfToken = '{{ csrf_token }}';
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
 
-        fetch(`/toggle_like/${postId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            likeCountSpan.textContent = data.likes_count;
-            this.dataset.liked = data.liked ? "true" : "false";
-            this.style.color = data.liked ? 'red' : 'gray';
-            this.innerHTML = (data.liked ? "❤️" : "♡") + ' <span class="like-count">' + data.likes_count + '</span>';
-        });
-    });
+document.addEventListener("click", function (e) {
+const button = e.target.closest(".like-button-unificado");
+if (!button) return;
+
+    const tipo = button.dataset.tipo; // 'post' o 'comentario'
+const objetoId = button.dataset.id;
+const likeCountSpan = button.querySelector('.like-count');
+const iconoSpan = button.querySelector('.icono-like');
+
+fetch('/toggle_like/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+        'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ tipo: tipo, id: objetoId })
+})
+.then(response => response.json())
+.then(data => {
+    button.dataset.liked = data.liked ? "true" : "false";
+    likeCountSpan.textContent = data.likes_count;
+    iconoSpan.textContent = data.liked ? '❤️' : '♡';
+    button.style.color = data.liked ? 'red' : 'gray';
+})
+.catch(error => console.error('Error:', error));
+
 });
 </script>
 
 
-
+{% endfor %}
 
 {% endblock %}

@@ -12,14 +12,24 @@ from .models import Post, Categoria, Comentario
 from .forms import PostForm , ComentarioForm
 
 from django.contrib.admin.views.decorators import staff_member_required
- 
+
 from django.views.decorators.http import require_POST
+
+from django.utils import timezone
 
 
 
 def inicio(request):
-    posts = Post.objects.all().order_by('-fecha_creacion')
-
+    posts = Post.objects.all().order_by('-fecha_publicacion')
+    
+    if request.user.is_authenticated:
+        for post in posts:
+            post.user_dio_like = request.user in post.likes.all()
+    else:
+        for post in posts:
+            post.user_dio_like = False
+    
+        
     if request.method == 'POST':
         form = ComentarioForm(request.POST)
         if form.is_valid():
@@ -87,6 +97,7 @@ def crear_post(request):
         if form.is_valid():
             nuevo_post = form.save(commit=False)
             nuevo_post.autor = request.user  # ← asigna el autor automáticamente
+            nuevo_post.fecha_publicacion = timezone.now()
             nuevo_post.save()
             return redirect('lista_posts')  # cambiá esto por el nombre correcto si es distinto
     else:
@@ -120,21 +131,30 @@ def agregar_comentario(request, post_id):
     
     return redirect('inicio')
 
-@staff_member_required
+@login_required
 def eliminar_comentario(request, comentario_id):
     comentario = get_object_or_404(Comentario, id=comentario_id)
-    if request.user == comentario.autor or request.user.is_staff:
-        comentario.delete()
-    return redirect('inicio')
 
-@staff_member_required
+    if request.user != comentario.autor and not request.user.is_staff:
+        return HttpResponseForbidden("No estás autorizado para eliminar este comentario.")
+
+    if request.method == 'POST':
+        comentario.delete()
+        return redirect('inicio')
+    return render(request, 'inicio/confirmar_eliminacion_comentario.html', {'comentario': comentario})
+
+@login_required
 def eliminar_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    if request.user == post.autor or request.user.is_staff:
-        post.delete()
-    return redirect('inicio')
 
-from django.http import HttpResponseForbidden
+    if request.user != post.autor and not request.user.is_staff:
+        return HttpResponseForbidden("No estás autorizado para eliminar este post.")
+
+    if request.method == 'POST':
+        post.delete()
+        return redirect('inicio')  # o la vista que quieras después de eliminar
+    return render(request, 'inicio/confirmar_eliminacion_post.html', {'post': post})
+
 
 @login_required
 def editar_post(request, post_id):
@@ -178,17 +198,28 @@ def registro_view(request):
 
 
 @login_required
-def toggle_like(request, post_id):
-    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        post = Post.objects.get(id=post_id)
-        user = request.user
-        if user in post.likes.all():
-            post.likes.remove(user)
-            liked = False
-        else:
-            post.likes.add(user)
-            liked = True
-        return JsonResponse({'liked': liked, 'likes_count': post.likes.count()})
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+@require_POST
+def toggle_like_unificado(request):
+    import json
+    data = json.loads(request.body)
+    tipo = data.get("tipo")
+    objeto_id = data.get("id")
 
+    if tipo == "post":
+        objeto = Post.objects.get(id=objeto_id)
+    elif tipo == "comentario":
+        objeto = Comentario.objects.get(id=objeto_id)
+    else:
+        return JsonResponse({"error": "Tipo inválido"}, status=400)
 
+    if request.user in objeto.likes.all():
+        objeto.likes.remove(request.user)
+        liked = False
+    else:
+        objeto.likes.add(request.user)
+        liked = True
+
+    return JsonResponse({
+        "liked": liked,
+        "likes_count": objeto.likes.count()
+    })

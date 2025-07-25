@@ -4,5 +4,6 @@
 {% block content %}
 <h2>Perfil de {{ request.user.username }}</h2>
 <p>Email:  {{ request.user.email }}</p>
+<a href="{% url 'inicio' %}"><button>Ir al Inicio</button></a>
 
 {% endblock %}

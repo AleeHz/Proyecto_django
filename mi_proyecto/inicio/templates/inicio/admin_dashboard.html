@@ -7,7 +7,10 @@
 <body>
     <h1>Bienvenido al Panel de Administración</h1>
     <p>Hola {{ request.user.username }} (Administrador)</p>
+    <a href="{% url 'crear_post' %}">Crear nuevo post</a>
     <a href="{% url 'logout' %}">Cerrar sesión</a>
+    <a href="{% url 'inicio' %}"><button>Ir al Inicio</button></a>
+
 </body>
 </html>
 
