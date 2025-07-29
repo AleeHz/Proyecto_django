@@ -11,7 +11,7 @@ class Categoria(models.Model):
         return self.nombre
 
 class Post(models.Model):
-    titulo = models.CharField(max_length=200)
+    titulo = models.CharField(max_length=100)
     contenido = models.TextField()
     autor = models.ForeignKey(User, on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
@@ -29,6 +29,7 @@ class Comentario(models.Model):
     texto = models.TextField()
     fecha_publicacion = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='comentarios_likes', blank=True)
+    
 
     def __str__(self):
         return f"{self.autor.username} - {self.texto[:20]}"

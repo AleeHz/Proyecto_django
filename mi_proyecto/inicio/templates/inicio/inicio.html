@@ -51,10 +51,11 @@
 
 <h4>Comentarios:</h4>
 
-{% if post.comentarios.all %}
+{% if post.comentarios.exists %}
     {% for comentario in post.comentarios.all %}
         <div style="margin-left: 10px; margin-bottom: 8px;">
-            <strong>{{ comentario.autor.username }}:</strong> {{ comentario.texto }}
+            <strong>{{ comentario.autor.username }}:</strong> 
+            <p>{{ comentario.texto }}</p>
 
             {% if user.is_authenticated %}
                 <div style="margin-top: 4px;">
@@ -84,7 +85,8 @@
 {% if user.is_authenticated %}
     <form method="post" action="{% url 'agregar_comentario' post.id %}">
         {% csrf_token %}
-        <textarea name="texto" placeholder="Escribí un comentario..." rows="3" cols="50"></textarea><br>
+        <textarea id="comentario-texto-{{ post.id }}" name="texto" placeholder="Escribí un comentario..." rows="3" cols="50" maxlength="300"></textarea><br>
+        <p><span id="contador-{{ post.id }}">300</span> caracteres restantes</p>
         <button type="submit">Agregar Comentario</button>
     </form>
 {% else %}
@@ -137,6 +139,22 @@ fetch('/toggle_like/', {
 .catch(error => console.error('Error:', error));
 
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const textareas = document.querySelectorAll('textarea[name="texto"]');
+
+    textareas.forEach(function (textarea) {
+        const postId = textarea.id.split('-').pop();  // extrae el ID del post
+        const contador = document.getElementById(`contador-${postId}`);
+        const maxChars = 300;
+
+        textarea.addEventListener('input', function () {
+            const restante = maxChars - textarea.value.length;
+            contador.textContent = restante;
+        });
+    });
+});
+
 </script>
 
 

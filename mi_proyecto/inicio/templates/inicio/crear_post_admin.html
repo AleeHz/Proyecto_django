@@ -6,7 +6,41 @@
     <h2>[ADMIN] Crear nuevo post</h2>
     <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    <p>
+        {{ form.titulo.label_tag }}
+        {{ form.titulo }}
+        <small id="contador_titulo">Quedan 100 caracteres</small>
+        {% if form.titulo.errors %}
+        <div class="error">{{ form.titulo.errors }}</div>
+        {% endif %}
+    </p>
+
+    <p>
+        {{ form.contenido.label_tag }}
+        {{ form.contenido }}
+        <small id="contador_contenido">Quedan 300 caracteres</small>
+        {% if form.contenido.errors %}
+        <div class="error">{{ form.contenido.errors }}</div>
+        {% endif %}
+    </p>
+
     <button type="submit" class="btn btn-danger">Publicar</button>
-    </form>
+</form>
+
+<script>
+    function contadorCaracteres(idCampo, idContador, maxCaracteres) {
+        const campo = document.getElementById(idCampo);
+        const contador = document.getElementById(idContador);
+        if (!campo || !contador) return;
+        campo.addEventListener('input', () => {
+            const restantes = maxCaracteres - campo.value.length;
+            contador.textContent = `Quedan ${restantes} caracteres`;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        contadorCaracteres('id_titulo', 'contador_titulo', 100);
+        contadorCaracteres('id_contenido', 'contador_contenido', 300);
+    });
+</script>
 {% endblock %}
