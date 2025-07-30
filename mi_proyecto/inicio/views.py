@@ -17,49 +17,40 @@ from django.views.decorators.http import require_POST
 
 from django.utils import timezone
 
-
+from django.contrib.auth.models import User
 
 def inicio(request):
     posts = Post.objects.all().order_by('-fecha_publicacion')
-    
+
     if request.user.is_authenticated:
         for post in posts:
             post.user_dio_like = request.user in post.likes.all()
     else:
         for post in posts:
             post.user_dio_like = False
-    
-        
+
     if request.method == 'POST':
         form = ComentarioForm(request.POST)
         if form.is_valid():
-            comentario = form.save(commit=False)
-            comentario.autor = request.user
-            comentario.post = Post.objects.get(pk=request.POST.get('post_id'))
-            comentario.save()
-            return redirect('inicio')
+            texto = form.cleaned_data['texto'].strip()
+            if not texto:
+                from django.contrib import messages
+                messages.error(request, "El comentario no puede estar vacío.")
+            else:
+                comentario = form.save(commit=False)
+                comentario.autor = request.user
+                comentario.post = Post.objects.get(pk=request.POST.get('post_id'))
+                comentario.texto = texto
+                comentario.save()
+                return redirect('inicio')
     else:
-        form = ComentarioForm()
+        form = ComentarioForm()  
 
     return render(request, 'inicio/inicio.html', {
         'posts': posts,
         'form': form,
     })
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            usuario = form.get_user()
-            login(request, usuario)
-            
-            if usuario.is_superuser:
-                return redirect('admin_dashboard')
-            else:
-                return redirect('usuario_dashboard')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'inicio/login.html', {'form': form})
 
 def logout_view(request):
     logout(request)
@@ -72,12 +63,31 @@ def perfil(request):
     else:
         base_template = 'inicio/base_usuario.html'
     
+    posts = Post.objects.filter(autor=request.user).order_by('-fecha_publicacion')
+
     return render(request, 'inicio/perfil.html', {
+        'base_template': base_template,
+        'posts': posts
+    })
+
+
+
+def perfil_usuario(request, username):
+    usuario = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(autor=usuario).order_by('-fecha_publicacion')
+
+    if request.user.is_superuser:
+        base_template = 'inicio/base_admin.html'
+    else:
+        base_template = 'inicio/base_usuario.html'
+
+    return render(request, 'inicio/perfil_usuario.html', {
+        'usuario_perfil': usuario,
+        'posts': posts,
         'base_template': base_template
     })
 
-def perfil_view(request):
-    return render(request, 'inicio/perfil.html')
+
 
 
 @login_required
@@ -95,11 +105,19 @@ def crear_post(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
         if form.is_valid():
+            titulo = form.cleaned_data['titulo'].strip()
+        contenido = form.cleaned_data['contenido'].strip()
+        if not titulo or not contenido:
+            from django.contrib import messages
+            messages.error(request, "El título y contenido no pueden estar vacíos.")
+        else:
             nuevo_post = form.save(commit=False)
-            nuevo_post.autor = request.user  # ← asigna el autor automáticamente
+            nuevo_post.autor = request.user
+            nuevo_post.titulo = titulo
+            nuevo_post.contenido = contenido
             nuevo_post.fecha_publicacion = timezone.now()
             nuevo_post.save()
-            return redirect('lista_posts')  # cambiá esto por el nombre correcto si es distinto
+            return redirect('lista_posts')
     else:
         form = PostForm()
     return render(request, 'inicio/crear_post.html', {'form': form})
@@ -112,11 +130,18 @@ def lista_posts(request):
 
 @login_required
 def detalle_post(request, post_id):
-    post = Post.objects.get(id=post_id)
-    comentarios = post.comentarios.all().order_by('-fecha')  # gracias al related_name
-    return render(request, 'inicio/detalle_post.html', {
-        'post': post,
-        'comentarios': comentarios
+    
+    if request.user.is_superuser:
+        base_template = "inicio/base_admin.html"
+    else:
+        base_template = "inicio/base_usuario.html"
+    
+    post = get_object_or_404(Post, id=post_id)
+    comentarios = Comentario.objects.filter(post=post).order_by('-fecha_publicacion')
+    return render(request, "inicio/detalle_post.html", {
+        "post": post,
+        "base_template": base_template,
+        "comentarios": comentarios
     })
 
 
@@ -128,6 +153,7 @@ def agregar_comentario(request, post_id):
         texto = request.POST.get('texto')
         if texto:
             Comentario.objects.create(post=post, autor=request.user, texto=texto)
+            
     
     return redirect('inicio')
 
@@ -152,7 +178,7 @@ def eliminar_post(request, post_id):
 
     if request.method == 'POST':
         post.delete()
-        return redirect('inicio')  # o la vista que quieras después de eliminar
+        return redirect('inicio')  
     return render(request, 'inicio/confirmar_eliminacion_post.html', {'post': post})
 
 
@@ -165,7 +191,15 @@ def editar_post(request, post_id):
     if request.method == 'POST':
         form = PostForm(request.POST, instance=post)
         if form.is_valid():
-            form.save()
+            titulo = form.cleaned_data['titulo'].strip()
+        contenido = form.cleaned_data['contenido'].strip()
+        if not titulo or not contenido:
+            from django.contrib import messages
+            messages.error(request, "El título y contenido no pueden estar vacíos.")
+        else:
+            post.titulo = titulo
+            post.contenido = contenido
+            post.save()
             return redirect('detalle_post', post_id=post.id)
     else:
         form = PostForm(instance=post)
@@ -179,8 +213,13 @@ def editar_comentario(request, comentario_id):
         return HttpResponseForbidden("No tenés permiso para editar este comentario.")
 
     if request.method == 'POST':
-        comentario.texto = request.POST.get('texto')
+        texto = request.POST.get('texto', '').strip()
+    if texto:
+        comentario.texto = texto
         comentario.save()
+    else:
+        from django.contrib import messages
+        messages.error(request, "El comentario no puede estar vacío.")
         return redirect('inicio')
     return render(request, 'inicio/editar_comentario.html', {'comentario': comentario})
 

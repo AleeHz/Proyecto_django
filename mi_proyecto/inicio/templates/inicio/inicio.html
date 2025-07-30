@@ -46,7 +46,7 @@
 {% endif %}
 
 
-    <small>Publicado por <strong>{{ post.autor.username }}</strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
+    <small>Publicado por <strong><a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a></strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
     </small>
 
 <h4>Comentarios:</h4>
@@ -54,7 +54,7 @@
 {% if post.comentarios.exists %}
     {% for comentario in post.comentarios.all %}
         <div style="margin-left: 10px; margin-bottom: 8px;">
-            <strong>{{ comentario.autor.username }}:</strong> 
+            <strong><a href="{% url 'perfil_usuario' comentario.autor.username %}">{{ comentario.autor.username }}</a></strong>:
             <p>{{ comentario.texto }}</p>
 
             {% if user.is_authenticated %}

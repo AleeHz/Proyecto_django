@@ -4,11 +4,13 @@ from django.urls import path
 from . import views
 
 from .views import registro_view
+from django.contrib.auth import views as auth_views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.inicio, name='inicio'),
     
-    path('login/', views.login_view, name='login'),
+    path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', views.logout_view, name='logout'),
 
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
@@ -16,7 +18,10 @@ urlpatterns = [
 
     path('inicio/', views.inicio, name='inicio'),
     path('perfil/', views.perfil, name='perfil'),
+    path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'),
     path('crear-post/', views.crear_post, name='crear_post'),
+    
+    
     path('lista-posts/', views.lista_posts, name='lista_posts'),
 
     path('post/<int:post_id>/', views.detalle_post, name='detalle_post'),

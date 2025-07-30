@@ -1,0 +1,11 @@
+{% extends 'inicio/base_usuario.html' %}
+
+{% block content %}
+    <h1>Iniciar sesión</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+    </form>
+    <p><a href="{% url 'inicio' %}">Ir al Inicio</a></p>
+{% endblock %}
