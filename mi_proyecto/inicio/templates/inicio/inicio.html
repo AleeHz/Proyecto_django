@@ -10,7 +10,7 @@
 
 <div style="margin-bottom: 20px;">
     {% if user.is_authenticated %}
-        <a href="{% url 'perfil' %}">Mi perfil</a> |
+        <a href="{% url 'mi_perfil' %}">Mi perfil</a> |
         <a href="{% url 'crear_post' %}" class="btn btn-success">📝 Crear nuevo post</a>
         <a href="{% url 'logout' %}">Cerrar sesión</a>
     {% else %}
@@ -52,13 +52,17 @@
 
 
     <small style="display: flex; align-items: center; gap: 10px;">
-    {% if post.autor.perfil.avatar %}
-        <img src="{{ post.autor.perfil.avatar.url }}" alt="Avatar de {{ post.autor.username }}" style="width: 32px; height: 32px; border-radius: 50%;">
-    {% else %}
+        {% if post.autor.perfil.avatar %}
+            <img src="{{ post.autor.perfil.avatar.url }}" alt="Avatar de {{ post.autor.username }}" style="width: 32px; height: 32px; border-radius: 50%;">
+        {% else %}
         <img src="/media/avatars/default.png" alt="Avatar por defecto" style="width: 32px; height: 32px; border-radius: 50%;">
-    {% endif %}
-    Publicado por <strong><a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a></strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
-</small>
+        {% endif %}
+        Publicado por {% if request.user == post.autor %}
+        <a href="{% url 'mi_perfil' %}">{{ post.autor.username }}</a>
+        {% else %}
+            <a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a>
+        {% endif %}
+    </small>
 
 <h4>Comentarios:</h4>
 

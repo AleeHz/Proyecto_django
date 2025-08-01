@@ -17,7 +17,7 @@ urlpatterns = [
     path('usuario-dashboard/', views.usuario_dashboard, name='usuario_dashboard'),
 
     path('inicio/', views.inicio, name='inicio'),
-    path('perfil/', views.perfil, name='perfil'),
+    path('mi-perfil/', views.perfil, name='mi_perfil'),
     path('perfil/<str:username>/', views.perfil_usuario, name='perfil_usuario'),
     path('crear-post/', views.crear_post, name='crear_post'),
     

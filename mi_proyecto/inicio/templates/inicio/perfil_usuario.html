@@ -17,7 +17,12 @@
             {% for post in posts %}
             <li>
                 <strong>{{ post.titulo }}</strong><br>
-                {{ post.contenido|truncatechars:100 }}<br>
+                {{ post.contenido|linebreaksbr}}<br>
+
+                {% if post.imagen %}
+                    <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 300px; margin-top: 5px;"><br>
+                {% endif %}
+                
                 <small>Publicado el {{ post.fecha_publicacion }}</small>
             </li>
             {% endfor %}

@@ -62,17 +62,38 @@ def logout_view(request):
 
 @login_required
 def perfil(request):
+    # Determinar si es superusuario
     if request.user.is_superuser:
         base_template = 'inicio/base_admin.html'
     else:
         base_template = 'inicio/base_usuario.html'
-    
+
+    # Obtener o crear perfil
+    try:
+        perfil = request.user.perfil
+    except Perfil.DoesNotExist:
+        perfil = Perfil.objects.create(user=request.user)
+
+    # formulario
+    if request.method == 'POST':
+        form = AvatarForm(request.POST, request.FILES, instance=perfil)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Avatar actualizado correctamente.")
+            return redirect('mi_perfil')  
+    else:
+        form = AvatarForm(instance=perfil)
+
+    # los posts del usuario
     posts = Post.objects.filter(autor=request.user).order_by('-fecha_publicacion')
 
     return render(request, 'inicio/perfil.html', {
+        'perfil': perfil,
+        'form': form,
+        'posts': posts,
         'base_template': base_template,
-        'posts': posts
     })
+
 
 
 
@@ -80,6 +101,11 @@ def perfil_usuario(request, username):
     usuario = get_object_or_404(User, username=username)
     posts = Post.objects.filter(autor=usuario).order_by('-fecha_publicacion')
     
+    try:
+        perfil = usuario.perfil
+    except Perfil.DoesNotExist:
+        perfil = None
+
     if request.user.is_superuser:
         base_template = 'inicio/base_admin.html'
     else:
@@ -91,31 +117,6 @@ def perfil_usuario(request, username):
         'base_template': base_template,
         'perfil': perfil,
     })
-
-@login_required
-def perfil(request):
-    try:
-        perfil = request.user.perfil
-    except Perfil.DoesNotExist:
-        perfil = Perfil.objects.create(user=request.user)
-
-    if request.method == 'POST':
-        form = AvatarForm(request.POST, request.FILES, instance=perfil)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Avatar actualizado correctamente.")
-            return redirect('perfil')
-    else:
-        form = AvatarForm(instance=perfil)
-    
-    posts = Post.objects.filter(autor=request.user).order_by('-fecha_publicacion')
-
-    return render(request, 'inicio/perfil.html', {
-        'perfil': perfil,
-        'form': form,
-        'posts': posts 
-    })
-
 
 
 
