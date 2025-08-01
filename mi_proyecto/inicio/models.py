@@ -17,6 +17,7 @@ class Post(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_publicacion = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='likes_post', blank=True)
+    imagen = models.ImageField(upload_to='posts_imagenes/', blank=True, null=True)
     
 
     def __str__(self):
@@ -33,3 +34,10 @@ class Comentario(models.Model):
 
     def __str__(self):
         return f"{self.autor.username} - {self.texto[:20]}"
+    
+class Perfil(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='avatares/', default='avatares/default.png')
+
+    def __str__(self):
+        return f'Perfil de {self.user.username}'

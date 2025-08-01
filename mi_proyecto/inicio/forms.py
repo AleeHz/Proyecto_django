@@ -1,7 +1,7 @@
 
 
 from django import forms
-from .models import Post , Comentario
+from .models import Post , Comentario , Perfil
 
 
 class PostForm(forms.ModelForm):
@@ -25,7 +25,7 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ['titulo', 'contenido', 'categoria']  # y otros si tenés
+        fields = ['titulo', 'contenido', 'categoria', 'imagen']  # y otros si tenés
 
 
 class ComentarioForm(forms.ModelForm):
@@ -42,3 +42,8 @@ class ComentarioForm(forms.ModelForm):
     class Meta:
         model = Comentario
         fields = ['contenido']
+
+class AvatarForm(forms.ModelForm):
+    class Meta:
+        model = Perfil
+        fields = ['avatar']

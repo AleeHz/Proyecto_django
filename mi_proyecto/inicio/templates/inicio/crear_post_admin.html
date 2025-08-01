@@ -4,7 +4,7 @@
 
 {% block content %}
     <h2>[ADMIN] Crear nuevo post</h2>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <p>
         {{ form.titulo.label_tag }}
@@ -23,6 +23,16 @@
         <div class="error">{{ form.contenido.errors }}</div>
         {% endif %}
     </p>
+
+    <p>
+        {{ form.imagen.label_tag }}
+        {{ form.imagen }}
+        {% if form.imagen.errors %}
+        <div class="error">{{ form.imagen.errors }}</div>
+        {% endif %}
+    </p>
+
+
 
     <button type="submit" class="btn btn-danger">Publicar</button>
 </form>

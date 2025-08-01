@@ -33,6 +33,11 @@
     </div>
 
     <p>{{ post.contenido }}</p>
+
+    {% if post.imagen %}
+    <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 400px; max-height: 300px;">
+    {% endif %}
+
     
     {% if user.is_authenticated %}
     <button class="like-button-unificado" data-id="{{ post.id }}" data-tipo="post" data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}"style="background:none; border:none; padding:0; cursor:pointer;">
@@ -46,8 +51,14 @@
 {% endif %}
 
 
-    <small>Publicado por <strong><a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a></strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
-    </small>
+    <small style="display: flex; align-items: center; gap: 10px;">
+    {% if post.autor.perfil.avatar %}
+        <img src="{{ post.autor.perfil.avatar.url }}" alt="Avatar de {{ post.autor.username }}" style="width: 32px; height: 32px; border-radius: 50%;">
+    {% else %}
+        <img src="/media/avatars/default.png" alt="Avatar por defecto" style="width: 32px; height: 32px; border-radius: 50%;">
+    {% endif %}
+    Publicado por <strong><a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a></strong> el {{ post.fecha_publicacion|localtime|date:"d/m/Y H:i" }}
+</small>
 
 <h4>Comentarios:</h4>
 

@@ -1,4 +1,4 @@
-{% extends base_template %}
+{% extends 'inicio/base_usuario.html' %}
 
 
 {% block content %}
@@ -8,16 +8,42 @@
 
 <hr>
 
+<h3>Mi foto de perfil</h3>
+
+{% if perfil.avatar %}
+    <img src="{{ perfil.avatar.url }}" alt="Mi avatar" style="width: 100px; height: 100px; border-radius: 50%;">
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Actualizar avatar</button>
+</form>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+    </ul>
+{% endif %}
+
+
 <h3>Mis publicaciones</h3>
 
 {% if posts %}
     <ul>
         {% for post in posts %}
-            <li>
-                <strong>{{ post.titulo }}</strong><br>
-                <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small><br>
-                <a href="{% url 'detalle_post' post.id %}">Ver post</a>
-            </li>
+            <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                <h3>{{ post.titulo }}</h3>
+                <p>{{ post.contenido|truncatewords:25 }}</p>
+
+                {% if post.imagen %}
+                <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px;">
+                {% endif %}
+
+                <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small>
+            </div>
         {% endfor %}
     </ul>
 {% else %}

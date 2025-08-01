@@ -2,10 +2,14 @@
 
 {% block content %}
     <h2>Perfil de {{ usuario_perfil.username }}</h2>
-    <p>Email: {{ usuario_perfil.email }}</p>
-    
-    
 
+    {% if perfil and perfil.avatar %}
+        <img src="{{ perfil.avatar.url }}" alt="Avatar de {{ usuario_perfil.username }}" style="width: 120px; height: 120px; border-radius: 50%;">
+    {% else %}
+        <img src="/media/avatars/default.png" alt="Avatar por defecto" style="width: 120px; height: 120px; border-radius: 50%;">
+    {% endif %}
+
+    <p>Email: {{ usuario_perfil.email }}</p>
 
     <h3>Publicaciones:</h3>
     {% if posts %}
@@ -16,14 +20,13 @@
                 {{ post.contenido|truncatechars:100 }}<br>
                 <small>Publicado el {{ post.fecha_publicacion }}</small>
             </li>
-        {% endfor %}
+            {% endfor %}
         </ul>
     {% else %}
-    <p>Este usuario no ha publicado nada todavía.</p>
-    
-    
-{% endif %}
-<a href="{% url 'inicio' %}">
-    <button class="btn btn-secondary mt-3">← Volver al inicio</button>
-</a>
+        <p>Este usuario no ha publicado nada todavía.</p>
+    {% endif %}
+
+    <a href="{% url 'inicio' %}">
+        <button class="btn btn-secondary mt-3">← Volver al inicio</button>
+    </a>
 {% endblock %}

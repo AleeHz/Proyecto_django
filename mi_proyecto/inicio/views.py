@@ -8,8 +8,8 @@ from django.contrib.auth.forms import AuthenticationForm,UserCreationForm
 
 from django.contrib.auth.decorators import login_required
 
-from .models import Post, Categoria, Comentario
-from .forms import PostForm , ComentarioForm
+from .models import Post, Categoria, Comentario,Perfil
+from .forms import PostForm , ComentarioForm  , AvatarForm
 
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -18,6 +18,10 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 
 from django.contrib.auth.models import User
+
+
+from django.contrib import messages
+
 
 def inicio(request):
     posts = Post.objects.all().order_by('-fecha_publicacion')
@@ -75,7 +79,7 @@ def perfil(request):
 def perfil_usuario(request, username):
     usuario = get_object_or_404(User, username=username)
     posts = Post.objects.filter(autor=usuario).order_by('-fecha_publicacion')
-
+    
     if request.user.is_superuser:
         base_template = 'inicio/base_admin.html'
     else:
@@ -84,7 +88,32 @@ def perfil_usuario(request, username):
     return render(request, 'inicio/perfil_usuario.html', {
         'usuario_perfil': usuario,
         'posts': posts,
-        'base_template': base_template
+        'base_template': base_template,
+        'perfil': perfil,
+    })
+
+@login_required
+def perfil(request):
+    try:
+        perfil = request.user.perfil
+    except Perfil.DoesNotExist:
+        perfil = Perfil.objects.create(user=request.user)
+
+    if request.method == 'POST':
+        form = AvatarForm(request.POST, request.FILES, instance=perfil)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Avatar actualizado correctamente.")
+            return redirect('perfil')
+    else:
+        form = AvatarForm(instance=perfil)
+    
+    posts = Post.objects.filter(autor=request.user).order_by('-fecha_publicacion')
+
+    return render(request, 'inicio/perfil.html', {
+        'perfil': perfil,
+        'form': form,
+        'posts': posts 
     })
 
 
@@ -103,7 +132,7 @@ def usuario_dashboard(request):
 @login_required
 def crear_post(request):
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             titulo = form.cleaned_data['titulo'].strip()
         contenido = form.cleaned_data['contenido'].strip()
