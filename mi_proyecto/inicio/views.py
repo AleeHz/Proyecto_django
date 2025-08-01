@@ -100,7 +100,7 @@ def perfil(request):
 def perfil_usuario(request, username):
     usuario = get_object_or_404(User, username=username)
     posts = Post.objects.filter(autor=usuario).order_by('-fecha_publicacion')
-    
+    comentarios = Comentario.objects.filter(autor=usuario).select_related('post')
     try:
         perfil = usuario.perfil
     except Perfil.DoesNotExist:
@@ -116,6 +116,7 @@ def perfil_usuario(request, username):
         'posts': posts,
         'base_template': base_template,
         'perfil': perfil,
+        'comentarios': comentarios,
     })
 
 
