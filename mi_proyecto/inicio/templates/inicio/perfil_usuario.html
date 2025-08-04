@@ -22,10 +22,21 @@
                 {% if post.imagen %}
                     <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 300px; margin-top: 5px;"><br>
                 {% endif %}
-                
+
+                <p>Likes: {{ post.likes.count }}</p>
+
                 <small>Publicado el {{ post.fecha_publicacion }}</small>
+                
+                {% if request.user == post.autor %}
+                    <a href="{% url 'editar_post' post.id %}" class="btn btn-sm btn-primary mt-1">Editar</a>
+                    <a href="{% url 'eliminar_post' post.id %}" class="btn btn-sm btn-danger mt-1">Eliminar</a>
+                {% elif request.user.is_superuser %}
+                    <a href="{% url 'eliminar_post' post.id %}" class="btn btn-sm btn-danger mt-1">Eliminar</a>
+                {% endif %}
+
             </li>
             {% endfor %}
+
         </ul>
     {% else %}
         <p>Este usuario no ha publicado nada todavía.</p>
@@ -34,4 +45,19 @@
     <a href="{% url 'inicio' %}">
         <button class="btn btn-secondary mt-3">← Volver al inicio</button>
     </a>
+
+    <h3>Comentarios:</h3>
+
+    {% if post.comentarios.all %}
+    <ul>
+        {% for comentario in post.comentarios.all %}
+        <li>
+            {{ comentario.autor.username }}:</strong> {{ comentario.contenido|linebreaksbr }}
+                <small>({{ comentario.fecha_publicacion|date:"d/m/Y H:i" }})</small>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No hay comentarios aun.</p>
+{% endif %}
 {% endblock %}

@@ -36,18 +36,48 @@
         {% for post in posts %}
             <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
                 <h3>{{ post.titulo }}</h3>
-                <p>{{ post.contenido|truncatewords:25 }}</p>
+                <p>{{ post.contenido|linebreaksbr }}</p>
 
-                {% if post.imagen %}
-                <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px;">
-                {% endif %}
+        {% if post.imagen %}
+            <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px;">
+        {% endif %}
 
-                <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small>
-            </div>
+        <p><strong>Likes:</strong> {{ post.likes.count }}</p>
+        <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small><br>
+
+        {% if request.user == post.autor %}
+            <a href="{% url 'editar_post' post.id %}" class="btn btn-primary btn-sm">Editar</a>
+            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+        {% elif request.user.is_superuser %}
+            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+        {% endif %}
+
+        <div style="margin-top: 10px; padding-left: 15px;">
+            <strong>Comentarios:</strong>
+            {% for comentario in post.comentarios.all %}
+                <div>
+                    <em>{{ comentario.autor.username }}:</em> {{ comentario.contenido }}
+                </div>
+            {% empty %}
+                <p>No hay comentarios aún.</p>
+            {% endfor %}
+        </div>
+    </div>
         {% endfor %}
     </ul>
 {% else %}
     <p>No has publicado nada todavía.</p>
+{% endif %}
+
+<h3>Comentarios:</h3>
+{% if comentarios %}
+    <ul>
+    {% for comentario in comentarios %}
+        <li>"{{ comentario.contenido|truncatechars:100 }}" en <strong>{{ comentario.post.titulo }}</strong> ({{ comentario.fecha_publicacion }})</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Este usuario no ha comentado aún.</p>
 {% endif %}
 
 {% endblock %}

@@ -216,26 +216,36 @@ def eliminar_post(request, post_id):
 @login_required
 def editar_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    if request.user != post.autor:
+    # Solo autor o superusuario pueden editar
+    if request.user != post.autor and not request.user.is_superuser:
         return HttpResponseForbidden("No tenés permiso para editar este post.")
 
     if request.method == 'POST':
-        form = PostForm(request.POST, instance=post)
+        form = PostForm(request.POST,request.FILES ,instance=post)
         if form.is_valid():
             titulo = form.cleaned_data['titulo'].strip()
-        contenido = form.cleaned_data['contenido'].strip()
-        if not titulo or not contenido:
-            from django.contrib import messages
-            messages.error(request, "El título y contenido no pueden estar vacíos.")
-        else:
-            post.titulo = titulo
-            post.contenido = contenido
-            post.save()
-            return redirect('detalle_post', post_id=post.id)
+            contenido = form.cleaned_data['contenido'].strip()
+            if not titulo or not contenido:
+            
+                messages.error(request, "El título y contenido no pueden estar vacíos.")
+            else:
+                
+                form.save()  # guarda también imagen si se usa
+                return redirect('perfil_usuario', username=post.autor.username)
     else:
         form = PostForm(instance=post)
 
-    return render(request, 'inicio/editar_post.html', {'form': form})
+    # Elege la plantilla base según tipo de usuario
+    if request.user.is_superuser:
+        base_template = 'inicio/base_admin.html'
+    else:
+        base_template = 'inicio/base_usuario.html'
+
+    return render(request, 'inicio/editar_post.html', {
+        'form': form,
+        'post': post,
+        'base_template': base_template,
+    })
 
 @login_required
 def editar_comentario(request, comentario_id):
