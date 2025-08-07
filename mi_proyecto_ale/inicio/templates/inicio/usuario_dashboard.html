@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel de Usuario</title>
+</head>
+<body>
+    <h1>Bienvenido al Panel de Usuario</h1>
+    <p>Hola {{ request.user.username }}</p>
+    <a href="{% url 'logout' %}">Cerrar sesión</a>
+</body>
+</html>
