@@ -1,15 +1,21 @@
 {% extends 'inicio/base_usuario.html' %}
 
-
 {% block content %}
+
+<nav>   
+    <form action="{% url 'buscar_perfil' %}" method="get" class="d-flex">
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar usuario..." required>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </form>
+</nav>
+
 <h2>Perfil de {{ request.user.username }}</h2>
-<p>Email:  {{ request.user.email }}</p>
+<p>Email: {{ request.user.email }}</p>
 <a href="{% url 'inicio' %}"><button>Ir al Inicio</button></a>
 
 <hr>
 
 <h3>Mi foto de perfil</h3>
-
 {% if perfil.avatar %}
     <img src="{{ perfil.avatar.url }}" alt="Mi avatar" style="width: 100px; height: 100px; border-radius: 50%;">
 {% endif %}
@@ -23,61 +29,119 @@
 {% if messages %}
     <ul class="messages">
         {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
     </ul>
 {% endif %}
 
-
 <h3>Mis publicaciones</h3>
 
+
+
+<form method="get" style="margin-bottom: 15px;">
+    <select name="filtro" onchange="this.form.submit()">
+        <option value="">-- Ordenar/Filtrar --</option>
+        <option value="fecha_desc" {% if request.GET.filtro == 'fecha_desc' %}selected{% endif %}>Más recientes</option>
+        <option value="fecha_asc" {% if request.GET.filtro == 'fecha_asc' %}selected{% endif %}>Más antiguas</option>
+        <option value="con_imagen" {% if request.GET.filtro == 'con_imagen' %}selected{% endif %}>Solo con imagen</option>
+    </select>
+</form>
+
 {% if posts %}
-    <ul>
-        {% for post in posts %}
-            <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
-                <h3>{{ post.titulo }}</h3>
-                <p>{{ post.contenido|linebreaksbr }}</p>
+    <ul style="list-style: none; padding: 0;">
+    {% for post in posts %}
+        <li style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+            <h4>{{ post.titulo }}</h4>
+            <p>{{ post.contenido }}</p>
 
-        {% if post.imagen %}
-            <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px;">
-        {% endif %}
+            {% if post.imagen %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ post.imagen.url }}" alt="Imagen de {{ post.titulo }}" style="max-width: 300px; margin-top: 5px;">
+                </div>
+            {% endif %}
 
-        <p><strong>Likes:</strong> {{ post.likes.count }}</p>
-        <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small><br>
+            <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small>
 
-        {% if request.user == post.autor %}
-            <a href="{% url 'editar_post' post.id %}" class="btn btn-primary btn-sm">Editar</a>
-            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">Eliminar</a>
-        {% elif request.user.is_superuser %}
-            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">Eliminar</a>
-        {% endif %}
-
-        <div style="margin-top: 10px; padding-left: 15px;">
+            <hr>
             <strong>Comentarios:</strong>
             {% for comentario in post.comentarios.all %}
-                <div>
-                    <em>{{ comentario.autor.username }}:</em> {{ comentario.contenido }}
+                <div style="border-bottom: 1px solid #ddd; padding: 5px 0;">
+                    <em>{{ comentario.autor.username }}:</em> {{ comentario.texto }}
+
+                    <!-- Like de comentario -->
+                    <span id="like-button-{{ comentario.id }}"
+                          onclick="toggleLike('{{ comentario.id }}', 'comentario')" 
+                          style="cursor:pointer; font-size: 16px; margin-left: 8px;">
+                        {% if user in comentario.likes.all %}
+                            ❤️
+                        {% else %}
+                            ♡
+                        {% endif %}
+                    </span>
+                    <span id="like-count-{{ comentario.id }}">{{ comentario.likes.count }}</span>
+
+                    <!-- Opciones editar/borrar -->
+                    {% if request.user == comentario.autor %}
+                        <a href="{% url 'editar_comentario' comentario.id %}?next={{ request.path }}" 
+                           class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'eliminar_comentario' comentario.id %}?next={{ request.path }}" 
+                           class="btn btn-sm btn-danger">Borrar</a>
+                    {% elif request.user.is_superuser %}
+                        <a href="{% url 'eliminar_comentario' comentario.id %}?next={{ request.path }}" 
+                           class="btn btn-sm btn-danger">Borrar</a>
+                    {% endif %}
                 </div>
             {% empty %}
                 <p>No hay comentarios aún.</p>
             {% endfor %}
-        </div>
-    </div>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No has publicado nada todavía.</p>
-{% endif %}
 
-<h3>Comentarios:</h3>
-{% if comentarios %}
-    <ul>
-    {% for comentario in comentarios %}
-        <li>"{{ comentario.contenido|truncatechars:100 }}" en <strong>{{ comentario.post.titulo }}</strong> ({{ comentario.fecha_publicacion }})</li>
+            <!-- Formulario de comentario -->
+            <form method="post" action="{% url 'agregar_comentario' post.id %}" style="margin-top: 10px;">
+                {% csrf_token %}
+                <textarea 
+                    name="comentario" 
+                    rows="2" 
+                    cols="40" 
+                    maxlength="300" 
+                    oninput="updateCounter(this, 'contador-{{ post.id }}')" 
+                    placeholder="Escribe un comentario..." 
+                    required></textarea>
+                <div>
+                    <small id="contador-{{ post.id }}">300</small> caracteres restantes
+                </div>
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit">Comentar</button>
+            </form>
+        </li>
     {% endfor %}
     </ul>
 {% else %}
-    <p>Este usuario no ha comentado aún.</p>
+    <p>No tienes publicaciones.</p>
 {% endif %}
+
+<script>
+function toggleLike(objetoId, tipo) {
+    fetch("{% url 'toggle_like_unificado' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ id: objetoId, tipo: tipo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(`like-count-${objetoId}`).innerText = data.likes_count;
+        document.getElementById(`like-button-${objetoId}`).innerText = data.liked ? "❤️" : "♡";
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function updateCounter(textarea, counterId) {
+    const maxLength = textarea.getAttribute("maxlength");
+    const currentLength = textarea.value.length;
+    document.getElementById(counterId).textContent = maxLength - currentLength;
+}
+</script>
 
 {% endblock %}

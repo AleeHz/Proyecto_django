@@ -38,4 +38,6 @@ urlpatterns = [
 
     path("toggle_like/", views.toggle_like_unificado, name="toggle_like_unificado"),
 
+    path("buscar/", views.buscar_perfil, name="buscar_perfil"),
+
     ]
