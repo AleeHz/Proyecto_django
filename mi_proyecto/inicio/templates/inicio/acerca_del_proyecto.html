@@ -1,0 +1,31 @@
+
+{% extends 'inicio/base_usuario.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Acerca del Proyecto</h1>
+    <p>
+        Este proyecto es una plataforma de publicaciones y comentarios,
+        donde los usuarios pueden registrarse, iniciar sesión, crear publicaciones,
+        comentar, dar "me gusta" y gestionar su perfil.
+    </p>
+    <p>
+        Tecnologías utilizadas:
+        <ul>
+            <li>Django (backend y manejo de datos)</li>
+            <li>HTML y Bootstrap (interfaz y estilos)</li>
+            <li>JavaScript y AJAX (para interacciones dinámicas)</li>
+        </ul>
+    </p>
+    <p>
+        El objetivo es ofrecer una experiencia similar a una red social,
+        donde la comunidad pueda compartir ideas y comunicarse de forma sencilla.
+    </p>
+    <br>
+    <p> 
+        Desarrllado por: Alejandro Jose Hernandez
+    </p>
+
+    <a href="{% url 'inicio' %}" class="btn btn-secondary">⬅ Volver al Inicio</a>
+</div>
+{% endblock %}

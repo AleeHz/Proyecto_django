@@ -60,6 +60,36 @@
                 </div>
             {% endif %}
 
+
+
+
+            <!-- Like Post -->
+                        <span id="like-button-{{ post.id }}"
+                            onclick="toggleLike('{{ post.id }}', 'post')" 
+                            style="cursor:pointer; font-size: 20px;">
+                            {% if user in post.likes.all %}
+                                ❤️
+                            {% else %}
+                                ♡
+                            {% endif %}
+                        </span>
+                        <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+
+
+            <!-- Opciones editar/borrar para posts -->
+            {% if request.user == post.autor %}
+                <a href="{% url 'editar_post' post.id %}?next={{ request.path }}" 
+                    class="btn btn-sm btn-warning">✏️ Editar</a>
+                <a href="{% url 'eliminar_post' post.id %}?next={{ request.path }}" 
+                    class="btn btn-sm btn-danger">🗑️ Borrar</a>
+            {% elif request.user.is_superuser %}
+                <a href="{% url 'eliminar_post' post.id %}?next={{ request.path }}" 
+                class="btn btn-sm btn-danger">🗑️ Borrar</a>
+            {% endif %}
+
+            
+            
+
             <small>Publicado el {{ post.fecha_publicacion|date:"d/m/Y H:i" }}</small>
 
             <hr>
@@ -68,6 +98,7 @@
                 <div style="border-bottom: 1px solid #ddd; padding: 5px 0;">
                     <em>{{ comentario.autor.username }}:</em> {{ comentario.texto }}
 
+                    
                     <!-- Like de comentario -->
                     <span id="like-button-{{ comentario.id }}"
                           onclick="toggleLike('{{ comentario.id }}', 'comentario')" 

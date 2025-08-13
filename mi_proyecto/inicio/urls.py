@@ -40,4 +40,6 @@ urlpatterns = [
 
     path("buscar/", views.buscar_perfil, name="buscar_perfil"),
 
+    path('acerca-del-proyecto/', views.acerca_del_proyecto, name='acerca_del_proyecto'),
+    
     ]

@@ -2,13 +2,11 @@
 
 {% block content %}
 
-
 <nav>   
     <form action="{% url 'buscar_perfil' %}" method="get" class="d-flex">
-    <input type="text" name="q" class="form-control me-2" placeholder="Buscar usuario..." required>
-    <button type="submit" class="btn btn-primary">Buscar</button>
-</form>
-
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar usuario..." required>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </form>
 </nav>
 
 <a href="{% url 'inicio' %}">
@@ -36,10 +34,7 @@
     </select>
 </form>
 
-
 {% if posts %}
-
-
 <ul>
     {% for post in posts %}
     <li style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
@@ -57,7 +52,7 @@
             {% if user in post.likes.all %}
                 ❤️
             {% else %}
-                🤍
+                ♡
             {% endif %}
         </span>
         <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
@@ -97,23 +92,30 @@
             {% endfor %}
         </div>
 
-        <!-- Formulario para agregar comentario -->
-        <form method="post" action="{% url 'agregar_comentario' post.id %}">
-            {% csrf_token %}
-            <textarea 
-                name="comentario" 
-                rows="2" 
-                cols="40" 
-                maxlength="300" 
-                oninput="updateCounter(this, 'contador-{{ post.id }}')" 
-                placeholder="Escribe un comentario..." 
-                required></textarea>
-            <div>
-                <small id="contador-{{ post.id }}">300</small> caracteres restantes
-            </div>
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit">Comentar</button>
-        </form>
+        <!-- Formulario para agregar comentario solo si está autenticado -->
+        {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'agregar_comentario' post.id %}">
+                {% csrf_token %}
+                <textarea 
+                    name="comentario" 
+                    rows="2" 
+                    cols="40" 
+                    maxlength="300" 
+                    oninput="updateCounter(this, 'contador-{{ post.id }}')" 
+                    placeholder="Escribe un comentario..." 
+                    required></textarea>
+                <div>
+                    <small id="contador-{{ post.id }}">300</small> caracteres restantes
+                </div>
+                <input type="hidden" name="post_id" value="{{ post.id }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit">Comentar</button>
+            </form>
+        {% else %}
+            <p style="color: gray; font-style: italic; margin-top: 5px;">
+                Debes <a href="{% url 'login' %}?next={{ request.path }}">iniciar sesión</a> para comentar.
+            </p>
+        {% endif %}
     </li>
     {% endfor %}
 </ul>
@@ -122,12 +124,6 @@
 {% endif %}
 
 <script>
-function updateCounter(textarea, contadorId) {
-    const max = textarea.maxLength;
-    const restante = max - textarea.value.length;
-    document.getElementById(contadorId).innerText = restante;
-}
-
 function toggleLike(objetoId, tipo) {
     fetch("{% url 'toggle_like_unificado' %}", {
         method: "POST",
@@ -144,5 +140,12 @@ function toggleLike(objetoId, tipo) {
     })
     .catch(error => console.error('Error:', error));
 }
+
+function updateCounter(textarea, counterId) {
+    const maxLength = textarea.getAttribute("maxlength");
+    const currentLength = textarea.value.length;
+    document.getElementById(counterId).textContent = maxLength - currentLength;
+}
 </script>
+
 {% endblock %}

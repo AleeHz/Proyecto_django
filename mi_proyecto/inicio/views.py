@@ -33,6 +33,13 @@ from django.db.models import Q
 
 #tengo q ver esto aun no funciona bien
 def inicio(request):
+
+    if request.user.is_authenticated:
+        base_template = 'inicio/base_usuario.html'
+    else:
+        base_template = 'inicio/base_admin.html'
+
+
     # Tomamos el valor del filtro de la URL 
     filtro = request.GET.get('filtro', '')
 
@@ -82,6 +89,7 @@ def inicio(request):
         'posts': posts,
         'form': form,
         'filtro': filtro,
+        'base_template': base_template,
     })
 
 
@@ -144,16 +152,19 @@ def perfil_usuario(request, username):
     fecha_inicio = request.GET.get('fecha_inicio')
     fecha_fin = request.GET.get('fecha_fin')
 
+    # Filtros de imagen
     if filtro == 'con_imagen':
         posts = posts.exclude(Q(imagen='') | Q(imagen__isnull=True))
     elif filtro == 'sin_imagen':
         posts = posts.filter(Q(imagen='') | Q(imagen__isnull=True))
 
+    # Orden por fecha
     if filtro == 'fecha_asc':
         posts = posts.order_by('fecha_publicacion')
     else:  # por defecto fecha_desc
         posts = posts.order_by('-fecha_publicacion')
 
+    # Filtro por rango de fechas
     if fecha_inicio:
         posts = posts.filter(fecha_publicacion__date__gte=fecha_inicio)
     if fecha_fin:
@@ -171,20 +182,24 @@ def perfil_usuario(request, username):
             for comentario in post.comentarios.all():
                 comentario.user_dio_like = False
 
-    # Comentarios
+    # Comentarios: solo usuarios logueados pueden comentar
     if request.method == 'POST':
-        form = ComentarioForm(request.POST)
-        if form.is_valid():
-            texto = form.cleaned_data['texto'].strip()
-            if not texto:
-                messages.error(request, "El comentario no puede estar vacío.")
-            else:
-                comentario = form.save(commit=False)
-                comentario.autor = request.user
-                comentario.post = get_object_or_404(Post, pk=request.POST.get('post_id'))
-                comentario.texto = texto
-                comentario.save()
-                return redirect('perfil_usuario', username=username)
+        if not request.user.is_authenticated:
+            messages.error(request, "Debes iniciar sesión para comentar.")
+            return redirect('login')  # o redirigir a la misma página si querés
+        else:
+            form = ComentarioForm(request.POST)
+            if form.is_valid():
+                texto = form.cleaned_data['texto'].strip()
+                if not texto:
+                    messages.error(request, "El comentario no puede estar vacío.")
+                else:
+                    comentario = form.save(commit=False)
+                    comentario.autor = request.user
+                    comentario.post = get_object_or_404(Post, pk=request.POST.get('post_id'))
+                    comentario.texto = texto
+                    comentario.save()
+                    return redirect('perfil_usuario', username=username)
     else:
         form = ComentarioForm()
 
@@ -321,7 +336,7 @@ def editar_post(request, post_id):
             else:
                 
                 form.save()  # guarda también imagen si se usa
-                return redirect('perfil_usuario', username=post.autor.username)
+                return redirect('inicio')
     else:
         form = PostForm(instance=post)
 
@@ -340,18 +355,26 @@ def editar_post(request, post_id):
 @login_required
 def editar_comentario(request, comentario_id):
     comentario = get_object_or_404(Comentario, id=comentario_id)
+
+    # Permitir solo que el autor lo edite
     if request.user != comentario.autor:
         return HttpResponseForbidden("No tenés permiso para editar este comentario.")
 
     if request.method == 'POST':
         texto = request.POST.get('texto', '').strip()
-    if texto:
-        comentario.texto = texto
-        comentario.save()
-    else:
-        from django.contrib import messages
-        messages.error(request, "El comentario no puede estar vacío.")
-        return redirect('inicio')
+
+        if texto:
+            comentario.texto = texto
+            comentario.save()
+            # Redirigir a la página de donde vino (si está en el GET)
+            next_url = request.GET.get('next', reverse('inicio'))
+            return redirect(next_url)
+        else:
+            from django.contrib import messages
+            messages.error(request, "El comentario no puede estar vacío.")
+            return redirect(request.GET.get('next', reverse('inicio')))
+
+    # Si es GET, mostrar el formulario
     return render(request, 'inicio/editar_comentario.html', {'comentario': comentario})
 
 
@@ -424,3 +447,8 @@ def buscar_perfil(request):
 
         # Si es otro, ir a perfil_usuario
         return redirect(reverse("perfil_usuario", args=[usuario.username]))
+
+
+
+def acerca_del_proyecto(request):
+    return render(request, 'inicio/acerca_del_proyecto.html')

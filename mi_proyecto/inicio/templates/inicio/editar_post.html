@@ -1,15 +1,59 @@
-
 {% extends base_template %}
 {% load static %}
 
 {% block content %}
-
 <div class="container mt-4">
-    <h2>Editar Post</h2> 
-    <form method="post" enctype="multipart/form-data"> 
-        {% csrf_token %} {{ form.as_p }} 
-        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-        <a href="{% url 'inicio' %}" class="btn btn-secondary">Cancelar</a> 
+    <h2 class="mb-4">✏️ Editar Post</h2> 
+
+    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+        {% csrf_token %}
+
+        <!-- Campo título -->
+        <div class="mb-3">
+            <label for="id_titulo" class="form-label">Título</label>
+            {{ form.titulo }}
+        </div>
+
+        <!-- Campo contenido con contador -->
+        <div class="mb-3">
+            <label for="id_contenido" class="form-label">Contenido</label>
+            {{ form.contenido }}
+            <div class="text-end">
+                <small id="charCounter" class="text-muted">0 / 500 caracteres</small>
+            </div>
+        </div>
+
+        <!-- Campo imagen -->
+        <div class="mb-3">
+            <label for="id_imagen" class="form-label">Imagen</label>
+            {{ form.imagen }}
+            {% if post.imagen %}
+                
+            {% endif %}
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'inicio' %}" class="btn btn-secondary">Cancelar</a> 
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
     </form>
-</div> 
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const textarea = document.getElementById("id_contenido");
+    const counter = document.getElementById("charCounter");
+    const maxLength = 500;
+
+    function updateCounter() {
+        const length = textarea.value.length;
+        counter.textContent = `${length} / ${maxLength} caracteres`;
+        counter.classList.toggle("text-danger", length > maxLength);
+    }
+
+    textarea.addEventListener("input", updateCounter);
+    updateCounter();
+});
+</script>
 {% endblock %}

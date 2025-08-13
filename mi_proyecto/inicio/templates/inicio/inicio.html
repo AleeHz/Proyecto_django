@@ -11,6 +11,13 @@
     </form>
 </nav>
 
+<div style="margin: 15px 0; display: flex; gap: 10px;">
+    <a href="{% url 'mi_perfil' %}" class="btn btn-info">👤 Mi Perfil</a>
+    <a href="{% url 'crear_post' %}" class="btn btn-success">➕ Crear Post</a>
+    <a href="{% url 'acerca_del_proyecto' %}" class="btn btn-info mb-3">
+    ℹ️ Acerca del Proyecto</a>
+</div>
+
 <h1>Últimos Posts</h1>
 
 <form method="get" style="margin-bottom: 15px;">
@@ -22,99 +29,147 @@
     </select>
 </form>
 
+{% if posts %}
+    <ul style="list-style: none; padding: 0;">
+    {% for post in posts %}
+        <li style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+            <h3>{{ post.titulo }}</h3>
+            <p>{{ post.contenido }}</p>
 
-{% for post in posts %}
-<div style="border: 1px solid gray; padding: 10px; margin-bottom: 15px;">
-    <h3>{{ post.titulo }}</h3>
+            {% if post.imagen %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 400px; max-height: 300px;">
+                </div>
+            {% endif %}
 
-    <div style="margin-bottom: 5px;">
-        {% if user == post.autor %}
-            <a href="{% url 'editar_post' post.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
-        {% endif %}
-        {% if user == post.autor or user.is_staff %}
-            <a href="{% url 'eliminar_post' post.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
-        {% endif %}
-    </div>
+            {% if user.is_authenticated %}
+                <span id="like-button-{{ post.id }}"
+                      onclick="toggleLike('{{ post.id }}', 'post')" 
+                      style="cursor:pointer; font-size: 18px; margin-right: 5px;">
+                    {% if user in post.likes.all %}❤️{% else %}♡{% endif %}
+                </span>
+                <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+            {% endif %}
 
-    <p>{{ post.contenido }}</p>
+            <!-- Opciones editar/borrar para posts -->
+            {% if request.user == post.autor %}
+                <a href="{% url 'editar_post' post.id %}?next={{ request.path }}" 
+                    class="btn btn-sm btn-warning">✏️ Editar</a>
+                <a href="{% url 'eliminar_post' post.id %}?next={{ request.path }}" 
+                    class="btn btn-sm btn-danger">🗑️ Borrar</a>
+            {% elif request.user.is_superuser %}
+                <a href="{% url 'eliminar_post' post.id %}?next={{ request.path }}" 
+                class="btn btn-sm btn-danger">🗑️ Borrar</a>
+            {% endif %}
 
-    {% if post.imagen %}
-        <img src="{{ post.imagen.url }}" alt="Imagen del post" style="max-width: 400px; max-height: 300px;">
-    {% endif %}
-
-    {% if user.is_authenticated %}
-        <button class="like-button-unificado" 
-                data-id="{{ post.id }}" 
-                data-tipo="post" 
-                data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}" 
-                style="background:none; border:none; padding:0; cursor:pointer;">
-            <span class="icono-like">{% if user in post.likes.all %}❤️{% else %}♡{% endif %}</span>
-            <span class="like-count">{{ post.likes.count }}</span>
-        </button>
-    {% endif %}
-
-    <small style="display: flex; align-items: center; gap: 10px;">
-        {% if post.autor.perfil.avatar %}
-            <img src="{{ post.autor.perfil.avatar.url }}" alt="Avatar de {{ post.autor.username }}" style="width: 32px; height: 32px; border-radius: 50%;">
-        {% else %}
-            <img src="/media/avatars/default.png" alt="Avatar por defecto" style="width: 32px; height: 32px; border-radius: 50%;">
-        {% endif %}
-        Publicado por {% if request.user == post.autor %}
-            <a href="{% url 'mi_perfil' %}">{{ post.autor.username }}</a>
-        {% else %}
-            <a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a>
-        {% endif %}
-    </small>
-
-    <h4>Comentarios:</h4>
-    {% if post.comentarios.exists %}
-        {% for comentario in post.comentarios.all %}
-            <div style="margin-left: 10px; margin-bottom: 8px;">
-                <strong><a href="{% url 'perfil_usuario' comentario.autor.username %}">{{ comentario.autor.username }}</a></strong>:
-                <p>{{ comentario.texto }}</p>
-
-                {% if user.is_authenticated %}
-                    <div style="margin-top: 4px;">
-                        <button class="like-button-unificado" 
-                                data-id="{{ comentario.id }}" 
-                                data-tipo="comentario" 
-                                data-liked="{% if user in comentario.likes.all %}true{% else %}false{% endif %}" 
-                                style="background:none; border:none; padding:0; cursor:pointer;">
-                            <span class="icono-like">{% if user in comentario.likes.all %}❤️{% else %}♡{% endif %}</span>
-                            <span class="like-count">{{ comentario.likes.count }}</span>
-                        </button>
-                    </div>
+            <small style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                {% if post.autor.perfil.avatar %}
+                    <img src="{{ post.autor.perfil.avatar.url }}" alt="Avatar de {{ post.autor.username }}" style="width: 32px; height: 32px; border-radius: 50%;">
+                {% else %}
+                    <img src="/media/avatars/default.png" alt="Avatar por defecto" style="width: 32px; height: 32px; border-radius: 50%;">
                 {% endif %}
+                Publicado por 
+                {% if request.user == post.autor %}
+                    <a href="{% url 'mi_perfil' %}">{{ post.autor.username }}</a>
+                {% else %}
+                    <a href="{% url 'perfil_usuario' post.autor.username %}">{{ post.autor.username }}</a>
+                {% endif %}
+                — {{ post.fecha_publicacion|date:"d/m/Y H:i" }}
+            </small>
 
-                <div style="margin-top: 4px;">
-                    {% if user == comentario.autor %}
-                        <a href="{% url 'editar_comentario' comentario.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
+            <hr>
+            <strong>Comentarios:</strong>
+            {% for comentario in post.comentarios.all %}
+                <div style="border-bottom: 1px solid #ddd; padding: 5px 0;">
+                    <em>
+                        {% if request.user == comentario.autor %}
+                            <a href="{% url 'mi_perfil' %}">{{ comentario.autor.username }}</a>
+                        {% else %}
+                            <a href="{% url 'perfil_usuario' comentario.autor.username %}">{{ comentario.autor.username }}</a>
+                        {% endif %}
+                    </em>: {{ comentario.texto }}
+
+                    {% if user.is_authenticated %}
+                        <span id="like-button-{{ comentario.id }}"
+                              onclick="toggleLike('{{ comentario.id }}', 'comentario')" 
+                              style="cursor:pointer; font-size: 16px; margin-left: 8px;">
+                            {% if user in comentario.likes.all %}❤️{% else %}♡{% endif %}
+                        </span>
+                        <span id="like-count-{{ comentario.id }}">{{ comentario.likes.count }}</span>
                     {% endif %}
-                    {% if user == comentario.autor or user == post.autor or user.is_staff %}
-                        <a href="{% url 'eliminar_comentario' comentario.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
+
+                    {% if request.user == comentario.autor %}
+                        <a href="{% url 'editar_comentario' comentario.id %}?next={{ request.path }}" class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'eliminar_comentario' comentario.id %}?next={{ request.path }}" class="btn btn-sm btn-danger">Borrar</a>
+                    {% elif request.user.is_superuser %}
+                        <a href="{% url 'eliminar_comentario' comentario.id %}?next={{ request.path }}" class="btn btn-sm btn-danger">Borrar</a>
                     {% endif %}
                 </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No hay comentarios.</p>
-    {% endif %}
+            {% empty %}
+                <p>No hay comentarios aún.</p>
+            {% endfor %}
 
-    {% if user.is_authenticated %}
-        <form method="post" action="{% url 'agregar_comentario' post.id %}">
-            {% csrf_token %}
-            <textarea id="comentario-texto-{{ post.id }}" 
-                      name="comentario" 
-                      placeholder="Escribí un comentario..." 
-                      rows="3" cols="50" maxlength="300"></textarea><br>
-            <p><span id="contador-{{ post.id }}">300</span> caracteres restantes</p>
-            <button type="submit">Agregar Comentario</button>
-        </form>
-    {% else %}
-        <p><em>Inicia sesión para comentar.</em></p>
-    {% endif %}
-</div>
-{% endfor %}
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'agregar_comentario' post.id %}" style="margin-top: 10px;">
+                    {% csrf_token %}
+                    <textarea 
+                        name="comentario" 
+                        rows="2" 
+                        cols="40" 
+                        maxlength="300" 
+                        oninput="updateCounter(this, 'contador-{{ post.id }}')" 
+                        placeholder="Escribe un comentario..." 
+                        required></textarea>
+                    <div>
+                        <small id="contador-{{ post.id }}">300</small> caracteres restantes
+                    </div>
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit">Comentar</button>
+                </form>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No hay publicaciones.</p>
+{% endif %}
 
-<!-- El resto de tus scripts de like y contador se mantienen igual -->
+<script>
+function toggleLike(objetoId, tipo) {
+    fetch("{% url 'toggle_like_unificado' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ id: objetoId, tipo: tipo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(`like-count-${objetoId}`).innerText = data.likes_count;
+        document.getElementById(`like-button-${objetoId}`).innerText = data.liked ? "❤️" : "♡";
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function updateCounter(textarea, counterId) {
+    const maxLength = textarea.getAttribute("maxlength");
+    const currentLength = textarea.value.length;
+    document.getElementById(counterId).textContent = maxLength - currentLength;
+}
+</script>
+
+
+<footer class="bg-dark text-white text-center py-3 mt-4">
+    <div class="container">
+        <p class="mb-1">💻 Soporte Técnico: contáctanos si necesitas ayuda</p>
+        <p class="mb-0">
+            📧 Correo: 
+            <a href="mailto:soporte@gmail.com" class="text-info">soporte@gmail.com</a>
+        </p>
+    </div>
+</footer>
+
+
+
 {% endblock %}
