@@ -43,13 +43,14 @@
             {% endif %}
 
             {% if user.is_authenticated %}
-                <span id="like-button-{{ post.id }}"
-                      onclick="toggleLike('{{ post.id }}', 'post')" 
-                      style="cursor:pointer; font-size: 18px; margin-right: 5px;">
-                    {% if user in post.likes.all %}❤️{% else %}♡{% endif %}
+                <span id="like-button-post-{{ post.id }}"
+                    onclick="toggleLike('{{ post.id }}', 'post')"
+                    style="cursor:pointer; font-size: 18px; margin-right: 5px;">
+                {% if user in post.likes.all %}❤️{% else %}♡{% endif %}
                 </span>
-                <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+                <span id="like-count-post-{{ post.id }}">{{ post.likes.count }}</span>
             {% endif %}
+
 
             <!-- Opciones editar/borrar para posts -->
             {% if request.user == post.autor %}
@@ -90,12 +91,12 @@
                     </em>: {{ comentario.texto }}
 
                     {% if user.is_authenticated %}
-                        <span id="like-button-{{ comentario.id }}"
-                              onclick="toggleLike('{{ comentario.id }}', 'comentario')" 
-                              style="cursor:pointer; font-size: 16px; margin-left: 8px;">
-                            {% if user in comentario.likes.all %}❤️{% else %}♡{% endif %}
+                        <span id="like-button-comentario-{{ comentario.id }}"
+                            onclick="toggleLike('{{ comentario.id }}', 'comentario')"
+                            style="cursor:pointer; font-size: 16px; margin-left: 8px;">
+                    {% if user in comentario.likes.all %}❤️{% else %}♡{% endif %}
                         </span>
-                        <span id="like-count-{{ comentario.id }}">{{ comentario.likes.count }}</span>
+                    <span id="like-count-comentario-{{ comentario.id }}">{{ comentario.likes.count }}</span>
                     {% endif %}
 
                     {% if request.user == comentario.autor %}
@@ -135,23 +136,27 @@
 {% endif %}
 
 <script>
-function toggleLike(objetoId, tipo) {
+
+function toggleLike(id, tipo) {
     fetch("{% url 'toggle_like_unificado' %}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token }}"
         },
-        body: JSON.stringify({ id: objetoId, tipo: tipo })
+        body: JSON.stringify({ id: id, tipo: tipo })
     })
     .then(response => response.json())
     .then(data => {
-        document.getElementById(`like-count-${objetoId}`).innerText = data.likes_count;
-        document.getElementById(`like-button-${objetoId}`).innerText = data.liked ? "❤️" : "♡";
-    })
-    .catch(error => console.error('Error:', error));
-}
+        if (!data.error) {
+            let likeButton = document.getElementById(`like-button-${tipo}-${id}`);
+            let likeCount = document.getElementById(`like-count-${tipo}-${id}`);
 
+            if (likeButton) likeButton.textContent = data.liked ? "❤️" : "♡";
+            if (likeCount) likeCount.textContent = data.likes_count;
+        }
+    });
+}
 function updateCounter(textarea, counterId) {
     const maxLength = textarea.getAttribute("maxlength");
     const currentLength = textarea.value.length;

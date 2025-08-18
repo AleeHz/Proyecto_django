@@ -46,16 +46,16 @@
         {% endif %}
 
         <!-- Like Post -->
-        <span id="like-button-{{ post.id }}"
-              onclick="toggleLike('{{ post.id }}', 'post')" 
-              style="cursor:pointer; font-size: 20px;">
+        <span id="like-button-post-{{ post.id }}"
+            onclick="toggleLike('{{ post.id }}', 'post')"
+            style="cursor:pointer; font-size: 20px;">
             {% if user in post.likes.all %}
                 ❤️
             {% else %}
                 ♡
             {% endif %}
         </span>
-        <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+        <span id="like-count-post-{{ post.id }}">{{ post.likes.count }}</span>
 
         <!-- Comentarios -->
         <div style="margin-top: 10px; padding-left: 15px;">
@@ -65,16 +65,16 @@
                     <em>{{ comentario.autor.username }}:</em> {{ comentario.texto }}
 
                     <!-- Like de comentario -->
-                    <span id="like-button-{{ comentario.id }}"
-                          onclick="toggleLike('{{ comentario.id }}', 'comentario')" 
-                          style="cursor:pointer; font-size: 16px; margin-left: 8px;">
+                    <span id="like-button-comentario-{{ comentario.id }}"
+                        onclick="toggleLike('{{ comentario.id }}', 'comentario')"
+                        style="cursor:pointer; font-size: 16px; margin-left: 8px;">
                         {% if user in comentario.likes.all %}
                             ❤️
                         {% else %}
                             ♡
-                        {% endif %}
+                    {% endif %}
                     </span>
-                    <span id="like-count-{{ comentario.id }}">{{ comentario.likes.count }}</span>
+                    <span id="like-count-comentario-{{ comentario.id }}">{{ comentario.likes.count }}</span>
 
                     <!-- Opciones editar/borrar -->
                     {% if request.user == comentario.autor %}
@@ -135,8 +135,8 @@ function toggleLike(objetoId, tipo) {
     })
     .then(response => response.json())
     .then(data => {
-        document.getElementById(`like-count-${objetoId}`).innerText = data.likes_count;
-        document.getElementById(`like-button-${objetoId}`).innerText = data.liked ? "❤️" : "♡";
+        document.getElementById(`like-count-${tipo}-${objetoId}`).innerText = data.likes_count;
+        document.getElementById(`like-button-${tipo}-${objetoId}`).innerText = data.liked ? "❤️" : "♡";
     })
     .catch(error => console.error('Error:', error));
 }
